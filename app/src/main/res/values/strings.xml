@@ -9,4 +9,6 @@
     <string name="activity">Activity</string>
     <string name="daily_goal">Daily goal</string>
     <string name="error_str">Error! something went wrong!</string>
+    <string name="timeline_title">Timeline</string>
+    <string name="steps">Steps:</string>
 </resources>

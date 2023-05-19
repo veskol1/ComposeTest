@@ -27,7 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.composehealthytest.R
@@ -37,12 +37,13 @@ import com.example.composehealthytest.ui.theme.DividerColor
 import com.example.composehealthytest.ui.theme.GreenLightColor
 import com.example.composehealthytest.ui.theme.DarkGrayColor
 import com.example.composehealthytest.ui.theme.TitleColor
+import com.example.composehealthytest.util.Status
 import com.example.composehealthytest.viewmodels.HealthyViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(healthyViewModel: HealthyViewModel, onTimelineClicked: () -> Unit) {
-    val mainScreenState by healthyViewModel.uiState.collectAsState()
+    val mainScreenState by healthyViewModel.uiMainState.collectAsState()
 
     Scaffold(
         topBar = { MainScreenTopBar() }, content = {
@@ -52,23 +53,22 @@ fun MainScreen(healthyViewModel: HealthyViewModel, onTimelineClicked: () -> Unit
                     .fillMaxSize()
             ) {
                 when (mainScreenState.status) {
-                    HealthyViewModel.Status.DONE -> {
+                    Status.DONE -> {
                         TopScreenData()
                         Divider(modifier = Modifier.padding(vertical = 16.dp), color = DividerColor)
                         WeeklyTile(mainScreenState = mainScreenState, onTimelineClicked = onTimelineClicked)
                         Divider(color = DividerColor)
                     }
-                    HealthyViewModel.Status.LOADING -> {
+                    Status.LOADING -> {
                         LoadingScreen()
                     }
-                    HealthyViewModel.Status.ERROR -> {
+                    Status.ERROR -> {
                         ErrorScreen()
                     }
                 }
             }
         })
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,7 +78,8 @@ fun MainScreenTopBar() {
             Text(
                 text = stringResource(R.string.daily_activity_title),
                 color = TitleColor,
-                fontSize = 20.sp
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
             )
         }
     )
@@ -116,7 +117,7 @@ fun TitleWeeklyAndButton(onTimelineScreen: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column() {
+        Column {
             Text(text = stringResource(R.string.weekly_progress_title), fontSize = 16.sp)
             Text(
                 text = stringResource(R.string.weekly_progress_subtitle),
@@ -212,8 +213,8 @@ fun Bar(dayName: String, activityGoal: Int, dailyGoal: Int, selectedDay: Boolean
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    //MainScreen(healthyViewModel = null, onTimelineClicked = {})
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun MainScreenPreview() {
+//    MainScreen(healthyViewModel = null, onTimelineClicked = {})
+//}

@@ -29,7 +29,7 @@ fun MyAppNavHost(
         composable(
             route = navigateToTimelineScreen,
         ) {
-            TimelineScreen(healthyViewModel.getTimeLineData(), onBackPressed = {
+            TimelineScreen(healthyViewModel, onBackPressed = {
                 navController.popBackStack()
             })
         }

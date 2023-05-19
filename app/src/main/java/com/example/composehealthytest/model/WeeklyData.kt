@@ -7,7 +7,6 @@ data class WeeklyData(
     val weeklyDataList: List<Weekly>
 )
 
-
 data class Weekly(
     @SerializedName("daily_item")
     val dailyItem: DailyItem,
@@ -15,7 +14,6 @@ data class Weekly(
     @SerializedName("daily_data")
     val dailyData: DailyData
 )
-
 
 data class DailyItem(
     @SerializedName("daily_goal")
@@ -27,8 +25,8 @@ data class DailyItem(
 
 data class DailyData(
     @SerializedName("daily_distance_meters")
-    val dailyDistance: String,
+    val distance: String,
 
     @SerializedName("daily_kcal")
-    val dailyKcal: String,
+    val kcal: String,
 )

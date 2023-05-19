@@ -2,33 +2,56 @@ package com.example.composehealthytest.repository
 
 import com.example.composehealthytest.api.Api
 import com.example.composehealthytest.model.Weekly
-import com.example.composehealthytest.viewmodels.HealthyViewModel
+import com.example.composehealthytest.util.DateUtil
+import com.example.composehealthytest.util.ShortDay
+import com.example.composehealthytest.util.Status
 import java.lang.Exception
 import javax.inject.Inject
 
 class HealthyRepository @Inject constructor(private val api: Api) {
-    private var weeklyDataList: List<Weekly>? = null
-    suspend fun fetchData(): HealthyViewModel.Status {
+
+    private var weeklyResponseDataList: List<Weekly>? = null
+    suspend fun fetchData(): Status {
         return try {
             val apiResponse = api.getHealthyData()
             if (apiResponse.isSuccessful && apiResponse.body() != null) {
-                weeklyDataList = apiResponse.body()?.weeklyDataList
-                HealthyViewModel.Status.DONE
+                weeklyResponseDataList = apiResponse.body()?.weeklyDataList
+                Status.DONE
             } else {
-                HealthyViewModel.Status.ERROR
+                Status.ERROR
             }
         } catch (e: Exception) {
-            HealthyViewModel.Status.ERROR
+            Status.ERROR
         }
     }
 
-    fun getMainScreenData() = getNormalizedGraphData(weeklyDataList!!)
+    fun getTimelineData(): ArrayList<TimelineRowData> {
+        val weeklyTimelineDataList = ArrayList<TimelineRowData>()
 
-    fun getTimelineDataList() {
+        weeklyResponseDataList!!.forEachIndexed { indexOfDay, it ->
+            val stepsActivity = it.dailyItem.dailyActivity
+            val stepsGoal = it.dailyItem.dailyGoal
+            val progressMadePercent = stepsActivity.toFloat().div(stepsGoal.toFloat()) * CIRCLE_DEGREE
 
+            weeklyTimelineDataList.add(
+                TimelineRowData(
+                    madeGoal = it.dailyItem.dailyActivity > it.dailyItem.dailyGoal,
+                    progressMadePercent = progressMadePercent,
+                    stepsActivity = it.dailyItem.dailyActivity,
+                    stepsGoal = it.dailyItem.dailyGoal,
+                    distance = it.dailyData.distance.toFloat().div(METER_IN_KM),
+                    kcal = it.dailyData.kcal,
+                    dayName = ShortDay.values()[indexOfDay],
+                    dateNum = DateUtil.getDateNumber(indexOfDay)
+                )
+            )
+        }
+
+        return weeklyTimelineDataList
     }
 
-    private fun getNormalizedGraphData(weeklyDataList: List<Weekly>): ArrayList<WeeklyDataMainScreen> {
+    fun getMainScreenData() = getNormalizedGraphData(weeklyResponseDataList!!)
+    private fun getNormalizedGraphData(weeklyDataList: List<Weekly>): ArrayList<GraphBarData> {
         val maxBarHeight = findMaxData(weeklyDataList)
         return getNormalizedGraphDataList(maxBarHeight, weeklyDataList)
     }
@@ -46,14 +69,14 @@ class HealthyRepository @Inject constructor(private val api: Api) {
     private fun getNormalizedGraphDataList(
         maxBarHeight: Int,
         weeklyDataList: List<Weekly>
-    ): ArrayList<WeeklyDataMainScreen> {
-        val weeklyMainDataList = ArrayList<WeeklyDataMainScreen>()
+    ): ArrayList<GraphBarData> {
+        val weeklyMainDataList = ArrayList<GraphBarData>()
 
         weeklyDataList.forEachIndexed { index, it ->
             val percGoalHeight = it.dailyItem.dailyGoal.toFloat().div(maxBarHeight) * BAR_HEIGHT_DP
             val percActivityHeight = it.dailyItem.dailyActivity.toFloat().div(maxBarHeight) * BAR_HEIGHT_DP
             weeklyMainDataList.add(
-                WeeklyDataMainScreen(
+                GraphBarData(
                     dailyGoalPercent = percGoalHeight.toInt(),
                     dailyActivityPercent = percActivityHeight.toInt(),
                     dayName = ShortDay.values()[index]
@@ -63,35 +86,26 @@ class HealthyRepository @Inject constructor(private val api: Api) {
         return weeklyMainDataList
     }
 
-    data class WeeklyDataTimelineScreen(
-        val monthsTitle: String,
-        val madeGoal: Boolean,
-        val successPercentIndicator: Int,
-        val stepsActivity: String,
-        val stepsGoal: String,
-        val distance: String,
-        val kcal: String,
-        val dayName: ShortDay,
-        val dateNum: Int,
-    )
-
-    data class WeeklyDataMainScreen(
+    data class GraphBarData(
         val dailyGoalPercent: Int,
         val dailyActivityPercent: Int,
         val dayName: ShortDay,
     )
 
-    enum class ShortDay {
-        Sun,
-        Mon,
-        Tue,
-        Wed,
-        Thu,
-        Fri,
-        Sat
-    }
+    data class TimelineRowData(
+        val madeGoal: Boolean,
+        val progressMadePercent: Float,
+        val stepsActivity: String,
+        val stepsGoal: String,
+        val distance: Float,
+        val kcal: String,
+        val dayName: ShortDay,
+        val dateNum: Int,
+    )
 
     companion object {
         const val BAR_HEIGHT_DP = 150
+        const val CIRCLE_DEGREE = 360
+        const val METER_IN_KM = 1000
     }
 }

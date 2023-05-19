@@ -3,110 +3,84 @@ package com.example.composehealthytest.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.composehealthytest.repository.HealthyRepository
+import com.example.composehealthytest.util.DateUtil
+import com.example.composehealthytest.util.Status
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
 class HealthyViewModel @Inject constructor(private val repository: HealthyRepository): ViewModel() {
 
-    private val _uiState = MutableStateFlow(
+    private val _uiMainState = MutableStateFlow(
         UiMainScreenState(
             status = Status.LOADING,
-            selectedDayIndex = 0,
+            selectedDayIndex = -1,
             weeklyGraphDataList = arrayListOf()
         )
     )
 
-    val uiState = _uiState.asStateFlow()
+    val uiMainState = _uiMainState.asStateFlow()
+
+    private val _uiTimelineState = MutableStateFlow(UiTimelineScreenState(
+        selectedDayIndex = -1,
+        monthsTitle = "",
+        weeklyDataList = arrayListOf()
+    ))
+
+    val uiTimelineState = _uiTimelineState.asStateFlow()
 
     init {
         viewModelScope.launch {
             when(repository.fetchData()) {
                 Status.DONE -> {
                     updateMainScreenState()
+                    updateTimelineScreenState()
                 }
                 Status.ERROR -> {
-                    _uiState.update {
+                    _uiMainState.update {
                         it.copy(status = Status.ERROR)
                     }
                 }
                 else -> {}
             }
         }
-
-
-//        val daysToAdd = 7 - numDayOfWeek
-//
-//        val nextMonth = date?.plusDays(daysToAdd.toLong())?.month?.name
-//
-//        Log.d("haha","monthAfter="+nextMonth)
-
     }
 
     private fun updateMainScreenState() {
-        val numDayOfWeek = getNumDayOfWeek()
         val weeklyGraphDataList = repository.getMainScreenData()
-        _uiState.update {
+        _uiMainState.update {
             it.copy(
                 status = Status.DONE,
-                selectedDayIndex = numDayOfWeek,
+                selectedDayIndex = DateUtil.getNumDayOfWeek(),
                 weeklyGraphDataList = weeklyGraphDataList,
             )
         }
     }
 
-
-    fun getTimeLineData(): String {
-        return ""
-    }
-
-
-    private fun getNumDayOfWeek(): Int {
-        val date = LocalDate.now()
-
-        return when (date?.dayOfWeek?.name) {
-            Day.SUNDAY.name -> 0
-            Day.MONDAY.name -> 1
-            Day.TUESDAY.name -> 2
-            Day.WEDNESDAY.name -> 3
-            Day.THURSDAY.name -> 4
-            Day.FRIDAY.name -> 5
-            Day.SATURDAY.name -> 6
-            else -> {
-                -1
-            }
+    private fun updateTimelineScreenState() {
+        val weeklyTimelineData = repository.getTimelineData()
+        _uiTimelineState.update {
+            it.copy(
+                selectedDayIndex = DateUtil.getNumDayOfWeek(),
+                monthsTitle = DateUtil.getMonthsTitle(),
+                weeklyDataList = weeklyTimelineData,
+            )
         }
-    }
-
-    enum class Day {
-        SUNDAY,
-        MONDAY,
-        TUESDAY,
-        WEDNESDAY,
-        THURSDAY,
-        FRIDAY,
-        SATURDAY
-    }
-
-    enum class Status {
-        DONE,
-        LOADING,
-        ERROR,
     }
 
     data class UiMainScreenState(
         val status: Status,
         val selectedDayIndex: Int,
-        val weeklyGraphDataList: ArrayList<HealthyRepository.WeeklyDataMainScreen>
+        val weeklyGraphDataList: ArrayList<HealthyRepository.GraphBarData>
     )
 
     data class UiTimelineScreenState(
         val selectedDayIndex: Int,
-        val weeklyDataList: ArrayList<HealthyRepository.WeeklyDataTimelineScreen>,
+        val monthsTitle: String,
+        val weeklyDataList: ArrayList<HealthyRepository.TimelineRowData>,
     )
 }
