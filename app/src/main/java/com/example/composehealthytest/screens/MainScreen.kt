@@ -20,6 +20,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,7 +41,9 @@ import com.example.composehealthytest.viewmodels.HealthyViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(healthyViewModel: HealthyViewModel?, onTimelineClicked: () -> Unit) {
+fun MainScreen(healthyViewModel: HealthyViewModel, onTimelineClicked: () -> Unit) {
+    val mainScreenState by healthyViewModel.uiState.collectAsState()
+
     Scaffold(
         topBar = { MainScreenTopBar() }, content = {
             Column(
@@ -49,7 +53,7 @@ fun MainScreen(healthyViewModel: HealthyViewModel?, onTimelineClicked: () -> Uni
             ) {
                 TopScreenData()
                 Divider(modifier = Modifier.padding(vertical = 16.dp), color = DividerColor)
-                WeeklyTile(onTimelineClicked = onTimelineClicked)
+                WeeklyTile(mainScreenState = mainScreenState, onTimelineClicked = onTimelineClicked)
                 Divider(color = DividerColor)
             }
         })
@@ -60,7 +64,11 @@ fun MainScreen(healthyViewModel: HealthyViewModel?, onTimelineClicked: () -> Uni
 fun MainScreenTopBar() {
     TopAppBar(
         title = {
-            Text(text = stringResource(R.string.daily_activity_title), color = TitleColor, fontSize = 20.sp)
+            Text(
+                text = stringResource(R.string.daily_activity_title),
+                color = TitleColor,
+                fontSize = 20.sp
+            )
         }
     )
 }
@@ -68,7 +76,11 @@ fun MainScreenTopBar() {
 @Composable
 fun TopScreenData() {
     Column(modifier = Modifier.padding(top = 16.dp, start = 24.dp)) {
-        Text(text = stringResource(R.string.daily_goal_title), color = Color.Black, fontSize = 16.sp)
+        Text(
+            text = stringResource(R.string.daily_goal_title),
+            color = Color.Black,
+            fontSize = 16.sp
+        )
         Text(
             text = stringResource(R.string.daily_goal_subtitle),
             color = DarkGrayColor,
@@ -78,12 +90,12 @@ fun TopScreenData() {
 }
 
 @Composable
-fun WeeklyTile(onTimelineClicked: () -> Unit) {
+fun WeeklyTile(mainScreenState: HealthyViewModel.UiMainScreenState, onTimelineClicked: () -> Unit) {
     Column(modifier = Modifier.padding(top = 16.dp, start = 24.dp, end = 24.dp)) {
         TitleWeeklyAndButton(onTimelineScreen = onTimelineClicked)
         Spacer(modifier = Modifier.height(4.dp))
         WeeklyIcons()
-        WeeklyGraph()
+        WeeklyGraph(mainScreenState)
     }
 }
 
@@ -95,7 +107,11 @@ fun TitleWeeklyAndButton(onTimelineScreen: () -> Unit) {
     ) {
         Column() {
             Text(text = stringResource(R.string.weekly_progress_title), fontSize = 16.sp)
-            Text(text = stringResource(R.string.weekly_progress_subtitle), fontSize = 12.sp, color = DarkGrayColor)
+            Text(
+                text = stringResource(R.string.weekly_progress_subtitle),
+                fontSize = 12.sp,
+                color = DarkGrayColor
+            )
         }
         OutlinedButton(onClick = { onTimelineScreen() }) {
             Text(text = stringResource(R.string.button_timeline))
@@ -133,7 +149,7 @@ fun WeeklyIcons() {
 }
 
 @Composable
-fun WeeklyGraph() {
+fun WeeklyGraph(mainScreenState: HealthyViewModel.UiMainScreenState) {
     Row(
         modifier = Modifier
             .height(200.dp)
@@ -141,19 +157,28 @@ fun WeeklyGraph() {
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Bar(dayOfWeek = "Mon", dayName = "Sun", activityGoal = "80", dailyGoal = "100")
-        Bar(dayOfWeek = "Mon", dayName = "Mon", activityGoal = "80", dailyGoal = "100")
-        Bar(dayOfWeek = "Mon", dayName = "Tue", activityGoal = "60", dailyGoal = "100")
-        Bar(dayOfWeek = "Mon", dayName = "Wed", activityGoal = "80", dailyGoal = "100")
-        Bar(dayOfWeek = "Mon", dayName = "Thu", activityGoal = "40", dailyGoal = "100")
-        Bar(dayOfWeek = "Mon", dayName = "Fri", activityGoal = "80", dailyGoal = "90")
-        Bar(dayOfWeek = "Mon", dayName = "Sat", activityGoal = "80", dailyGoal = "90")
+        mainScreenState.weeklyDataList.forEachIndexed { index, it ->
+            Bar(
+                dayName = "Sun",
+                activityGoal = "80",
+                dailyGoal = "100",
+                selectedDay = index == mainScreenState.selectedDayIndex
+            )
+        }
+
+//        Bar(dayName = "Sun", activityGoal = "80", dailyGoal = "100", selectedDay = true)
+//        Bar(dayName = "Mon", activityGoal = "80", dailyGoal = "100")
+//        Bar(dayName = "Tue", activityGoal = "60", dailyGoal = "100")
+//        Bar(dayName = "Wed", activityGoal = "80", dailyGoal = "100")
+//        Bar(dayName = "Thu", activityGoal = "40", dailyGoal = "100")
+//        Bar(dayName = "Fri", activityGoal = "80", dailyGoal = "90")
+//        Bar(dayName = "Sat", activityGoal = "80", dailyGoal = "90")
     }
 
 }
 
 @Composable
-fun Bar(dayOfWeek: String, dayName: String, activityGoal: String, dailyGoal: String) {
+fun Bar(dayName: String, activityGoal: String, dailyGoal: String, selectedDay: Boolean = false) {
     Column {
         Row(verticalAlignment = Alignment.Bottom) {
             Column(
@@ -178,7 +203,7 @@ fun Bar(dayOfWeek: String, dayName: String, activityGoal: String, dailyGoal: Str
             modifier = Modifier
                 .height(4.dp)
                 .width(28.dp)
-                .background(color = BlueLightColor.takeIf { dayOfWeek == dayName }
+                .background(color = BlueLightColor.takeIf { selectedDay }
                     ?: BackgroundWhite)
         ) {}
 
@@ -188,5 +213,5 @@ fun Bar(dayOfWeek: String, dayName: String, activityGoal: String, dailyGoal: Str
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
-    MainScreen(healthyViewModel = null, onTimelineClicked = {})
+    //MainScreen(healthyViewModel = null, onTimelineClicked = {})
 }

@@ -11,7 +11,9 @@ import androidx.compose.ui.Modifier
 import com.example.composehealthytest.navigation.MyAppNavHost
 import com.example.composehealthytest.ui.theme.ComposeHealthyTestTheme
 import com.example.composehealthytest.viewmodels.HealthyViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val healthyViewModel: HealthyViewModel by viewModels()
 
