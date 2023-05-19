@@ -159,39 +159,31 @@ fun WeeklyGraph(mainScreenState: HealthyViewModel.UiMainScreenState) {
     ) {
         mainScreenState.weeklyDataList.forEachIndexed { index, it ->
             Bar(
-                dayName = "Sun",
-                activityGoal = "80",
-                dailyGoal = "100",
+                dayName = it.dayName.name,
+                activityGoal = it.percentileBarData.dailyActivity,
+                dailyGoal = it.percentileBarData.dailyGoal,
                 selectedDay = index == mainScreenState.selectedDayIndex
             )
         }
-
-//        Bar(dayName = "Sun", activityGoal = "80", dailyGoal = "100", selectedDay = true)
-//        Bar(dayName = "Mon", activityGoal = "80", dailyGoal = "100")
-//        Bar(dayName = "Tue", activityGoal = "60", dailyGoal = "100")
-//        Bar(dayName = "Wed", activityGoal = "80", dailyGoal = "100")
-//        Bar(dayName = "Thu", activityGoal = "40", dailyGoal = "100")
-//        Bar(dayName = "Fri", activityGoal = "80", dailyGoal = "90")
-//        Bar(dayName = "Sat", activityGoal = "80", dailyGoal = "90")
     }
 
 }
 
 @Composable
-fun Bar(dayName: String, activityGoal: String, dailyGoal: String, selectedDay: Boolean = false) {
+fun Bar(dayName: String, activityGoal: Int, dailyGoal: Int, selectedDay: Boolean = false) {
     Column {
         Row(verticalAlignment = Alignment.Bottom) {
             Column(
                 modifier = Modifier
-                    .height(activityGoal.toInt().dp)
-                    .width(14.dp)
+                    .height(activityGoal.dp)
+                    .width(12.dp)
                     .clip(shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                     .background(color = BlueLightColor)
             ) {}
             Column(
                 modifier = Modifier
-                    .height(dailyGoal.toInt().dp)
-                    .width(14.dp)
+                    .height(dailyGoal.dp)
+                    .width(12.dp)
                     .clip(shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                     .background(color = GreenLightColor)
             ) {}
@@ -206,7 +198,6 @@ fun Bar(dayName: String, activityGoal: String, dailyGoal: String, selectedDay: B
                 .background(color = BlueLightColor.takeIf { selectedDay }
                     ?: BackgroundWhite)
         ) {}
-
     }
 }
 
