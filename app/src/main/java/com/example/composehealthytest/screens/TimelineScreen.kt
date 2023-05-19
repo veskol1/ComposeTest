@@ -69,7 +69,7 @@ fun TopBarHealthy(onBackPressed: () -> Unit) {
         },
         navigationIcon = {
             IconButton(onClick = onBackPressed) {
-                Icon(painterResource(id = R.drawable.back_ic), "backIcon")
+                Icon(painterResource(id = R.drawable.back_ic), "back Button")
             }
         },
     )
@@ -113,7 +113,7 @@ fun DayDataRow() {
             .fillMaxHeight()
             .background(color = Color.LightGray))
         Spacer(modifier = Modifier.width(8.dp))
-        CircularLoader(size = 46.dp, strokeWidth = 6.dp)
+        CircularProgress(size = 46.dp, strokeWidth = 6.dp)
         Spacer(modifier = Modifier.width(8.dp))
         StepsTile()
         Spacer(modifier = Modifier.width(20.dp))
@@ -177,7 +177,7 @@ fun drawLeftIndicator() {
 
 
 @Composable
-fun CircularLoader(
+fun CircularProgress(
     size: Dp,
     strokeWidth: Dp
 ) {

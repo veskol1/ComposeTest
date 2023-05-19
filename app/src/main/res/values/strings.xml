@@ -8,4 +8,5 @@
     <string name="button_timeline">Timeline</string>
     <string name="activity">Activity</string>
     <string name="daily_goal">Daily goal</string>
+    <string name="error_str">Error! something went wrong!</string>
 </resources>

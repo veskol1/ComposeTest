@@ -51,13 +51,24 @@ fun MainScreen(healthyViewModel: HealthyViewModel, onTimelineClicked: () -> Unit
                     .padding(it)
                     .fillMaxSize()
             ) {
-                TopScreenData()
-                Divider(modifier = Modifier.padding(vertical = 16.dp), color = DividerColor)
-                WeeklyTile(mainScreenState = mainScreenState, onTimelineClicked = onTimelineClicked)
-                Divider(color = DividerColor)
+                when (mainScreenState.status) {
+                    HealthyViewModel.Status.DONE -> {
+                        TopScreenData()
+                        Divider(modifier = Modifier.padding(vertical = 16.dp), color = DividerColor)
+                        WeeklyTile(mainScreenState = mainScreenState, onTimelineClicked = onTimelineClicked)
+                        Divider(color = DividerColor)
+                    }
+                    HealthyViewModel.Status.LOADING -> {
+                        LoadingScreen()
+                    }
+                    HealthyViewModel.Status.ERROR -> {
+                        ErrorScreen()
+                    }
+                }
             }
         })
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -157,11 +168,11 @@ fun WeeklyGraph(mainScreenState: HealthyViewModel.UiMainScreenState) {
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        mainScreenState.weeklyDataList.forEachIndexed { index, it ->
+        mainScreenState.weeklyGraphDataList.forEachIndexed { index, it ->
             Bar(
                 dayName = it.dayName.name,
-                activityGoal = it.percentileBarData.dailyActivity,
-                dailyGoal = it.percentileBarData.dailyGoal,
+                activityGoal = it.dailyActivityPercent,
+                dailyGoal = it.dailyGoalPercent,
                 selectedDay = index == mainScreenState.selectedDayIndex
             )
         }

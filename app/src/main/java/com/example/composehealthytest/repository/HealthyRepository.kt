@@ -2,23 +2,35 @@ package com.example.composehealthytest.repository
 
 import com.example.composehealthytest.api.Api
 import com.example.composehealthytest.model.Weekly
+import com.example.composehealthytest.viewmodels.HealthyViewModel
+import java.lang.Exception
 import javax.inject.Inject
 
 class HealthyRepository @Inject constructor(private val api: Api) {
-
-    suspend fun getData(): ArrayList<WeeklyDataMainScreen>? {
-        val apiResponse = api.getHealthyData()
-        return if (apiResponse.isSuccessful) {
-            apiResponse.body()?.weeklyDataList
-            getNormalizedData(apiResponse.body()!!.weeklyDataList)
-        } else {
-            null
+    private var weeklyDataList: List<Weekly>? = null
+    suspend fun fetchData(): HealthyViewModel.Status {
+        return try {
+            val apiResponse = api.getHealthyData()
+            if (apiResponse.isSuccessful && apiResponse.body() != null) {
+                weeklyDataList = apiResponse.body()?.weeklyDataList
+                HealthyViewModel.Status.DONE
+            } else {
+                HealthyViewModel.Status.ERROR
+            }
+        } catch (e: Exception) {
+            HealthyViewModel.Status.ERROR
         }
     }
 
-    private fun getNormalizedData(weeklyDataList: List<Weekly>): ArrayList<WeeklyDataMainScreen> {
+    fun getMainScreenData() = getNormalizedGraphData(weeklyDataList!!)
+
+    fun getTimelineDataList() {
+
+    }
+
+    private fun getNormalizedGraphData(weeklyDataList: List<Weekly>): ArrayList<WeeklyDataMainScreen> {
         val maxBarHeight = findMaxData(weeklyDataList)
-        return getNormalizedDataList(maxBarHeight, weeklyDataList)
+        return getNormalizedGraphDataList(maxBarHeight, weeklyDataList)
     }
 
     private fun findMaxData(dataList: List<Weekly>): Int {
@@ -31,7 +43,7 @@ class HealthyRepository @Inject constructor(private val api: Api) {
         return Integer.max(maxDaily, maxActivity)
     }
 
-    private fun getNormalizedDataList(
+    private fun getNormalizedGraphDataList(
         maxBarHeight: Int,
         weeklyDataList: List<Weekly>
     ): ArrayList<WeeklyDataMainScreen> {
@@ -42,10 +54,8 @@ class HealthyRepository @Inject constructor(private val api: Api) {
             val percActivityHeight = it.dailyItem.dailyActivity.toFloat().div(maxBarHeight) * BAR_HEIGHT_DP
             weeklyMainDataList.add(
                 WeeklyDataMainScreen(
-                    percentileBarData = PercentileBarData(
-                        percGoalHeight.toInt(),
-                        percActivityHeight.toInt()
-                    ),
+                    dailyGoalPercent = percGoalHeight.toInt(),
+                    dailyActivityPercent = percActivityHeight.toInt(),
                     dayName = ShortDay.values()[index]
                 )
             )
@@ -53,14 +63,22 @@ class HealthyRepository @Inject constructor(private val api: Api) {
         return weeklyMainDataList
     }
 
-    data class WeeklyDataMainScreen(
-        val percentileBarData: PercentileBarData,
+    data class WeeklyDataTimelineScreen(
+        val monthsTitle: String,
+        val madeGoal: Boolean,
+        val successPercentIndicator: Int,
+        val stepsActivity: String,
+        val stepsGoal: String,
+        val distance: String,
+        val kcal: String,
         val dayName: ShortDay,
+        val dateNum: Int,
     )
 
-    data class PercentileBarData(
-        val dailyGoal: Int,
-        val dailyActivity: Int,
+    data class WeeklyDataMainScreen(
+        val dailyGoalPercent: Int,
+        val dailyActivityPercent: Int,
+        val dayName: ShortDay,
     )
 
     enum class ShortDay {

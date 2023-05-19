@@ -1,6 +1,5 @@
 package com.example.composehealthytest.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.composehealthytest.repository.HealthyRepository
@@ -15,26 +14,28 @@ import javax.inject.Inject
 @HiltViewModel
 class HealthyViewModel @Inject constructor(private val repository: HealthyRepository): ViewModel() {
 
-    private val _uiState = MutableStateFlow(UiMainScreenState(
-        selectedDayIndex = 0,
-        weeklyDataList = arrayListOf()
-    ))
+    private val _uiState = MutableStateFlow(
+        UiMainScreenState(
+            status = Status.LOADING,
+            selectedDayIndex = 0,
+            weeklyGraphDataList = arrayListOf()
+        )
+    )
 
     val uiState = _uiState.asStateFlow()
 
     init {
-        val numDayOfWeek = getNumDayOfWeek()
-
         viewModelScope.launch {
-            val weeklyMainScreenList = repository.getData()
-            weeklyMainScreenList?.let {
-
-                _uiState.update {
-                    it.copy(
-                        selectedDayIndex = numDayOfWeek,
-                        weeklyDataList = weeklyMainScreenList,
-                    )
+            when(repository.fetchData()) {
+                Status.DONE -> {
+                    updateMainScreenState()
                 }
+                Status.ERROR -> {
+                    _uiState.update {
+                        it.copy(status = Status.ERROR)
+                    }
+                }
+                else -> {}
             }
         }
 
@@ -47,9 +48,20 @@ class HealthyViewModel @Inject constructor(private val repository: HealthyReposi
 
     }
 
+    private fun updateMainScreenState() {
+        val numDayOfWeek = getNumDayOfWeek()
+        val weeklyGraphDataList = repository.getMainScreenData()
+        _uiState.update {
+            it.copy(
+                status = Status.DONE,
+                selectedDayIndex = numDayOfWeek,
+                weeklyGraphDataList = weeklyGraphDataList,
+            )
+        }
+    }
 
 
-    fun getData(): String {
+    fun getTimeLineData(): String {
         return ""
     }
 
@@ -71,27 +83,30 @@ class HealthyViewModel @Inject constructor(private val repository: HealthyReposi
         }
     }
 
-    enum class Day(name: String) {
-        SUNDAY("SUNDAY"),
-        MONDAY("MONDAY"),
-        TUESDAY("TUESDAY"),
-        WEDNESDAY("WEDNESDAY"),
-        THURSDAY("THURSDAY"),
-        FRIDAY("FRIDAY"),
-        SATURDAY("SATURDAY")
+    enum class Day {
+        SUNDAY,
+        MONDAY,
+        TUESDAY,
+        WEDNESDAY,
+        THURSDAY,
+        FRIDAY,
+        SATURDAY
+    }
+
+    enum class Status {
+        DONE,
+        LOADING,
+        ERROR,
     }
 
     data class UiMainScreenState(
+        val status: Status,
         val selectedDayIndex: Int,
-        val weeklyDataList: ArrayList<HealthyRepository.WeeklyDataMainScreen>
+        val weeklyGraphDataList: ArrayList<HealthyRepository.WeeklyDataMainScreen>
     )
 
-
-//    data class UiTimelineScreenState(
-//        val selectedDayIndex: Int,
-//        val weeklyDataList: ArrayList<HealthyRepository.WeeklyDataMainScreen>
-//    )
-
-
-
+    data class UiTimelineScreenState(
+        val selectedDayIndex: Int,
+        val weeklyDataList: ArrayList<HealthyRepository.WeeklyDataTimelineScreen>,
+    )
 }
