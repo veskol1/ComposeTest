@@ -1,21 +1,60 @@
 package com.example.composehealthytest.repository
 
+import android.content.SharedPreferences
 import com.example.composehealthytest.api.Api
+import com.example.composehealthytest.constants.Constants.SAVED_LAST_TIME_FETCH_DATA
 import com.example.composehealthytest.model.Weekly
+import com.example.composehealthytest.room.HealthyDao
 import com.example.composehealthytest.util.DateUtil
 import com.example.composehealthytest.util.ShortDay
 import com.example.composehealthytest.util.Status
-import java.lang.Exception
+import java.util.Calendar
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-class HealthyRepository @Inject constructor(private val api: Api) {
+
+class HealthyRepository @Inject constructor(
+    private val api: Api,
+    private val healthyDao: HealthyDao,
+    private val sharedPref: SharedPreferences
+) {
 
     private var weeklyResponseDataList: List<Weekly>? = null
-    suspend fun fetchData(): Status {
+    suspend fun getData(): Status {
+        return if (needToFetchData()) {
+            healthyDao.deleteAll()
+            fetchData()
+        } else {
+            weeklyResponseDataList = healthyDao.getAll()
+            Status.DONE
+        }
+    }
+
+    private fun needToFetchData(): Boolean {
+        val lastFetchTime = getLastFetchTime()
+
+        val timeNow = Calendar.getInstance().timeInMillis
+        val timeToReduce = TimeUnit.HOURS.toMillis(HOURS_TO_FETCH)
+        val timeToFetch = timeNow.minus(timeToReduce)
+
+        return if (lastFetchTime == NOT_FETCH_YET) {
+            saveFetchTime()
+            true
+        } else if (timeToFetch > lastFetchTime) {
+            saveFetchTime()
+            true
+        } else {
+            false
+        }
+    }
+
+    private suspend fun fetchData(): Status {
         return try {
             val apiResponse = api.getHealthyData()
             if (apiResponse.isSuccessful && apiResponse.body() != null) {
-                weeklyResponseDataList = apiResponse.body()?.weeklyDataList
+                val data = apiResponse.body()!!.weeklyDataList
+                healthyDao.insertAll(data)
+                weeklyResponseDataList = data
                 Status.DONE
             } else {
                 Status.ERROR
@@ -31,7 +70,8 @@ class HealthyRepository @Inject constructor(private val api: Api) {
         weeklyResponseDataList!!.forEachIndexed { indexOfDay, it ->
             val stepsActivity = it.dailyItem.dailyActivity
             val stepsGoal = it.dailyItem.dailyGoal
-            val progressMadePercent = stepsActivity.toFloat().div(stepsGoal.toFloat()) * CIRCLE_DEGREE
+            val progressMadePercent =
+                stepsActivity.toFloat().div(stepsGoal.toFloat()) * CIRCLE_DEGREE
 
             weeklyTimelineDataList.add(
                 TimelineRowData(
@@ -74,7 +114,8 @@ class HealthyRepository @Inject constructor(private val api: Api) {
 
         weeklyDataList.forEachIndexed { index, it ->
             val percGoalHeight = it.dailyItem.dailyGoal.toFloat().div(maxBarHeight) * BAR_HEIGHT_DP
-            val percActivityHeight = it.dailyItem.dailyActivity.toFloat().div(maxBarHeight) * BAR_HEIGHT_DP
+            val percActivityHeight =
+                it.dailyItem.dailyActivity.toFloat().div(maxBarHeight) * BAR_HEIGHT_DP
             weeklyMainDataList.add(
                 GraphBarData(
                     dailyGoalPercent = percGoalHeight.toInt(),
@@ -84,6 +125,18 @@ class HealthyRepository @Inject constructor(private val api: Api) {
             )
         }
         return weeklyMainDataList
+    }
+
+    private fun saveFetchTime() {
+        val timeNow = Calendar.getInstance().timeInMillis
+        with (sharedPref.edit()) {
+            putLong(SAVED_LAST_TIME_FETCH_DATA, timeNow)
+            apply()
+        }
+    }
+
+    private fun getLastFetchTime(): Long {
+        return sharedPref.getLong(SAVED_LAST_TIME_FETCH_DATA, 0L)
     }
 
     data class GraphBarData(
@@ -107,5 +160,7 @@ class HealthyRepository @Inject constructor(private val api: Api) {
         const val BAR_HEIGHT_DP = 150
         const val CIRCLE_DEGREE = 360
         const val METER_IN_KM = 1000
+        const val HOURS_TO_FETCH = 12L
+        const val NOT_FETCH_YET = 0L
     }
 }

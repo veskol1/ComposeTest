@@ -1,13 +1,18 @@
 package com.example.composehealthytest.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
 data class WeeklyData(
     @SerializedName("weekly_data")
     val weeklyDataList: List<Weekly>
 )
-
+@Entity(tableName = "healthy_table")
 data class Weekly(
+    @PrimaryKey(autoGenerate = true)
+    val id: Int? = null,
+
     @SerializedName("daily_item")
     val dailyItem: DailyItem,
 

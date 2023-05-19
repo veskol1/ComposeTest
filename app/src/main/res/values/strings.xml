@@ -11,4 +11,5 @@
     <string name="error_str">Error! something went wrong!</string>
     <string name="timeline_title">Timeline</string>
     <string name="steps">Steps:</string>
+    <string name="saved_last_time_fetch_data">saved_last_time_fetch_data</string>
 </resources>

@@ -6,6 +6,7 @@ import com.example.composehealthytest.repository.HealthyRepository
 import com.example.composehealthytest.util.DateUtil
 import com.example.composehealthytest.util.Status
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -34,8 +35,8 @@ class HealthyViewModel @Inject constructor(private val repository: HealthyReposi
     val uiTimelineState = _uiTimelineState.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            when(repository.fetchData()) {
+        viewModelScope.launch(Dispatchers.IO) {
+            when(repository.getData()) {
                 Status.DONE -> {
                     updateMainScreenState()
                     updateTimelineScreenState()
