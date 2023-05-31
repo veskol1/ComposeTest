@@ -19,4 +19,5 @@ val SuperLightGrayColor = Color(0xFFEFEFEF)
 val DividerColor = Color(0xFFF2F2F2)
 
 val BlueLightColor = Color(0xFF0284FD)
+val BlueSuperLightColor = Color(0xFFACD4FA)
 val GreenLightColor = Color(0xFF00B93F)

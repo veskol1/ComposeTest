@@ -20,7 +20,8 @@ class HealthyViewModel @Inject constructor(private val repository: HealthyReposi
         UiMainScreenState(
             status = Status.LOADING,
             selectedDayIndex = -1,
-            weeklyGraphDataList = arrayListOf()
+            weeklyGraphDataList = arrayListOf(),
+            weeklyDataList = arrayListOf()
         )
     )
 
@@ -58,6 +59,7 @@ class HealthyViewModel @Inject constructor(private val repository: HealthyReposi
                 status = Status.DONE,
                 selectedDayIndex = DateUtil.getNumDayOfWeek(),
                 weeklyGraphDataList = weeklyGraphDataList,
+                weeklyDataList = repository.getTimelineData()
             )
         }
     }
@@ -76,7 +78,8 @@ class HealthyViewModel @Inject constructor(private val repository: HealthyReposi
     data class UiMainScreenState(
         val status: Status,
         val selectedDayIndex: Int,
-        val weeklyGraphDataList: ArrayList<HealthyRepository.GraphBarData>
+        val weeklyGraphDataList: ArrayList<HealthyRepository.GraphBarData>,
+        val weeklyDataList: ArrayList<HealthyRepository.TimelineRowData>
     )
 
     data class UiTimelineScreenState(
