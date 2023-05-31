@@ -9,9 +9,7 @@ import com.example.composehealthytest.util.DateUtil
 import com.example.composehealthytest.util.ShortDay
 import com.example.composehealthytest.util.Status
 import java.util.Calendar
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-
 
 class HealthyRepository @Inject constructor(
     private val api: Api,
@@ -19,42 +17,15 @@ class HealthyRepository @Inject constructor(
     private val sharedPref: SharedPreferences
 ) {
 
-    private var weeklyResponseDataList: List<Weekly>? = null
-    suspend fun getData(): Status {
-        return if (needToFetchData()) {
-            healthyDao.deleteAll()
-            fetchData()
-        } else {
-            weeklyResponseDataList = healthyDao.getAll()
-            Status.DONE
-        }
-    }
-
-    private fun needToFetchData(): Boolean {
-        val lastFetchTime = getLastFetchTime()
-
-        val timeNow = Calendar.getInstance().timeInMillis
-        val timeToReduce = TimeUnit.HOURS.toMillis(HOURS_TO_FETCH)
-        val timeToFetch = timeNow.minus(timeToReduce)
-
-        return if (lastFetchTime == NOT_FETCH_YET) {
-            saveFetchTime()
-            true
-        } else if (timeToFetch > lastFetchTime) {
-            saveFetchTime()
-            true
-        } else {
-            false
-        }
-    }
+    fun getFetchedData() = healthyDao.getAll()
 
     private suspend fun fetchData(): Status {
         return try {
             val apiResponse = api.getHealthyData()
             if (apiResponse.isSuccessful && apiResponse.body() != null) {
+                healthyDao.deleteAll()
                 val data = apiResponse.body()!!.weeklyDataList
                 healthyDao.insertAll(data)
-                weeklyResponseDataList = data
                 Status.DONE
             } else {
                 Status.ERROR
@@ -64,10 +35,10 @@ class HealthyRepository @Inject constructor(
         }
     }
 
-    fun getTimelineData(): ArrayList<TimelineRowData> {
+    fun getTimelineData(data: List<Weekly>): ArrayList<TimelineRowData> {
         val weeklyTimelineDataList = ArrayList<TimelineRowData>()
 
-        weeklyResponseDataList!!.forEachIndexed { indexOfDay, it ->
+        data.forEachIndexed { indexOfDay, it ->
             val stepsActivity = it.dailyItem.dailyActivity
             val stepsGoal = it.dailyItem.dailyGoal
             val progressMadePercent =
@@ -90,7 +61,7 @@ class HealthyRepository @Inject constructor(
         return weeklyTimelineDataList
     }
 
-    fun getMainScreenData() = getNormalizedGraphData(weeklyResponseDataList!!)
+    fun getMainScreenData(data: List<Weekly>) = getNormalizedGraphData(data)
     private fun getNormalizedGraphData(weeklyDataList: List<Weekly>): ArrayList<GraphBarData> {
         val maxBarHeight = findMaxData(weeklyDataList)
         return getNormalizedGraphDataList(maxBarHeight, weeklyDataList)
@@ -139,6 +110,10 @@ class HealthyRepository @Inject constructor(
         return sharedPref.getLong(SAVED_LAST_TIME_FETCH_DATA, 0L)
     }
 
+    suspend fun refreshData(): Status {
+        return fetchData()
+    }
+
     data class GraphBarData(
         val dailyGoalPercent: Int,
         val dailyActivityPercent: Int,
@@ -161,6 +136,5 @@ class HealthyRepository @Inject constructor(
         const val CIRCLE_DEGREE = 360
         const val METER_IN_KM = 1000
         const val HOURS_TO_FETCH = 12L
-        const val NOT_FETCH_YET = 0L
     }
 }

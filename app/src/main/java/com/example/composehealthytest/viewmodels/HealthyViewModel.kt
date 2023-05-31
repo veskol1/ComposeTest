@@ -2,13 +2,14 @@ package com.example.composehealthytest.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.composehealthytest.model.Weekly
 import com.example.composehealthytest.repository.HealthyRepository
 import com.example.composehealthytest.util.DateUtil
 import com.example.composehealthytest.util.Status
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -36,36 +37,30 @@ class HealthyViewModel @Inject constructor(private val repository: HealthyReposi
     val uiTimelineState = _uiTimelineState.asStateFlow()
 
     init {
-        viewModelScope.launch(Dispatchers.IO) {
-            when(repository.getData()) {
-                Status.DONE -> {
-                    updateMainScreenState()
-                    updateTimelineScreenState()
+        viewModelScope.launch {
+            repository.getFetchedData().collectLatest { fetchedData: List<Weekly> ->
+                if (fetchedData.isNotEmpty()) {
+                    updateMainScreenState(fetchedData)
+                    updateTimelineScreenState(fetchedData)
                 }
-                Status.ERROR -> {
-                    _uiMainState.update {
-                        it.copy(status = Status.ERROR)
-                    }
-                }
-                else -> {}
             }
         }
     }
 
-    private fun updateMainScreenState() {
-        val weeklyGraphDataList = repository.getMainScreenData()
+    private fun updateMainScreenState(fetchedData: List<Weekly>) {
+        val weeklyGraphDataList = repository.getMainScreenData(fetchedData)
         _uiMainState.update {
             it.copy(
                 status = Status.DONE,
                 selectedDayIndex = DateUtil.getNumDayOfWeek(),
                 weeklyGraphDataList = weeklyGraphDataList,
-                weeklyDataList = repository.getTimelineData()
+                weeklyDataList = repository.getTimelineData(fetchedData)
             )
         }
     }
 
-    private fun updateTimelineScreenState() {
-        val weeklyTimelineData = repository.getTimelineData()
+    private fun updateTimelineScreenState(fetchedData: List<Weekly>) {
+        val weeklyTimelineData = repository.getTimelineData(fetchedData)
         _uiTimelineState.update {
             it.copy(
                 selectedDayIndex = DateUtil.getNumDayOfWeek(),

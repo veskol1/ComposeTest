@@ -5,11 +5,13 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.composehealthytest.model.Weekly
+import kotlinx.coroutines.flow.Flow
+
 
 @Dao
 interface HealthyDao {
     @Query("SELECT * from healthy_table")
-    fun getAll(): List<Weekly>
+    fun getAll(): Flow<List<Weekly>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAll(data: List<Weekly>)
