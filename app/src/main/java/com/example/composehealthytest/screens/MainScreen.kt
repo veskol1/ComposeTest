@@ -67,11 +67,7 @@ fun MainScreen(healthyViewModel: HealthyViewModel, onTimelineClicked: () -> Unit
 
     Scaffold(
         topBar = { MainScreenTopBar() }, content = {
-            Column(
-                modifier = Modifier
-                    .padding(it)
-                    .fillMaxSize()
-            ) {
+            Column(modifier = Modifier.padding(it).fillMaxSize()) {
                 when (mainScreenState.status) {
                     Status.DONE -> {
                         TopScreenData()
@@ -267,7 +263,7 @@ fun Bar(
                     .background(color = BlueLightColor)
                     .pointerInput(Unit) {
                         detectTapGestures {
-                            onBarClicked(activityGoal.dp,)
+                            onBarClicked(activityGoal.dp)
                         }
                     }
             ) {}
